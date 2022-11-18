@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { Button, HStack, ScrollView, Stack } from 'native-base'
+import { Alert, Button, HStack, ScrollView, Stack } from 'native-base'
 import React, { useEffect, useState } from 'react'
 import {
   Appbar,
@@ -17,6 +17,9 @@ import TextInput from '../../components/text-input/TextInput'
 import dayjs from 'dayjs'
 import { ErrorMessage } from '@hookform/error-message'
 import { useNavigation } from '@react-navigation/native'
+import { useGetRanksQuery } from '../../services/rankAPI'
+import { useGetStatusQuery } from '../../services/statusAPI'
+import { usePostPersMutation } from '../../services/persAPI'
 
 const Detail = ({ initialValues = {} }) => {
   const navigation = useNavigation()
@@ -35,22 +38,35 @@ const Detail = ({ initialValues = {} }) => {
 
   const [date, setDate] = useState(new Date())
   const [showDate, setShowDate] = useState(false)
-  const [gender, setGender] = useState('')
+  const [rank, setRank] = useState('')
+  const [status, setStatus] = useState('')
 
-  const genderList = [
-    {
-      label: 'Male',
-      value: 'male'
-    },
-    {
-      label: 'Female',
-      value: 'female'
-    },
-    {
-      label: 'Others',
-      value: 'others'
+  const [postPers] = usePostPersMutation()
+
+  const ranks = useGetRanksQuery().data?.data || []
+
+  const listRank = ranks.map((item) => {
+    return {
+      label: item.name,
+      value: item.id
     }
-  ]
+  })
+
+  const statuses = useGetStatusQuery().data?.data || []
+
+  const listStatus = statuses.map((item) => {
+    return {
+      label: item.name,
+      value: item.id
+    }
+  })
+
+  // const onChange = (event, selectedDate) => {
+  //   const currentDate = selectedDate
+  //   setShowDate(false)
+  //   setDate(handleBornDateSave(currentDate))
+  //   console.log('currentDate', currentDate)
+  // }
 
   const handleBornDateSave = () => {
     setValue('born_date', date, { shouldValidate: true })
@@ -63,6 +79,13 @@ const Detail = ({ initialValues = {} }) => {
       born_date: dayjs(values.born_date).format('DD MMMM YYYY')
     }
     console.log('payload', payload)
+    postPers(payload)
+    .unwrap()
+    .then((_) => navigation.goBack())
+    .catch((err) => {
+      console.log('error', err)
+      Alert.alert('Error', err.data.error)
+    })
   }
 
   useEffect(() => {
@@ -109,32 +132,18 @@ const Detail = ({ initialValues = {} }) => {
               />
             </TouchableOpacity>
             {showDate && (
-              <Stack>
-                <DateTimePicker
-                  testID="dateTimePicker"
-                  value={date}
-                  is24Hour
-                  mode="date"
-                  display="spinner"
-                  onChange={(_, date) => setDate(date)}
-                />
-                <HStack space={4} justifyContent="flex-end">
-                  <Button
-                    onPress={() => setShowDate(false)}
-                    colorScheme="indigo"
-                    size="sm"
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    onPress={handleBornDateSave}
-                    colorScheme="indigo"
-                    size="sm"
-                  >
-                    Save
-                  </Button>
-                </HStack>
-              </Stack>
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={date}
+                is24Hour
+                mode="date"
+                display="default"
+                onChange={(_, date) => {
+                  setShowDate(false)
+                  setDate(date)
+                  handleBornDateSave()
+                }}
+              />
             )}
 
             <ErrorMessage
@@ -161,16 +170,20 @@ const Detail = ({ initialValues = {} }) => {
           />
           <PaperDropdown
             label="Rank"
-            list={genderList}
-            value={gender}
-            setValue={setGender}
+            name="rank_id"
+            control={control}
+            list={listRank}
+            // value={rank}
+            // setValue={setRank}
             mode="outlined"
           />
           <PaperDropdown
             label="Status"
-            list={genderList}
-            value={gender}
-            setValue={setGender}
+            name="status_id"
+            control={control}
+            list={listStatus}
+            // value={status}
+            // setValue={setStatus}
             mode="outlined"
           />
           <Button

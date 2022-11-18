@@ -3,9 +3,15 @@ import { FlatList, Stack, Text } from 'native-base'
 import React from 'react'
 import { TouchableOpacity } from 'react-native'
 import { Appbar } from 'react-native-paper'
+import { useGetPersQuery } from '../../services/persAPI'
 
 const HomeScreen = () => {
   const navigation = useNavigation()
+
+  const listPers = useGetPersQuery().data?.data || []
+
+  console.log('pers', useGetPersQuery().data?.data)
+
   return (
     <Stack flex={1}>
       <Appbar.Header>
@@ -18,7 +24,7 @@ const HomeScreen = () => {
       <FlatList
         _contentContainerStyle={{ p: 5 }}
         keyExtractor={(item) => item.id}
-        data={[]}
+        data={listPers || []}
         ListEmptyComponent={() => (
           <Stack p={4} alignItems="center">
             <Text>Data not found</Text>
@@ -28,15 +34,15 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate('TodoFormScreen', {
+              navigation.navigate('UserFormScreen', {
                 id: item.id,
                 type: 'edit'
               })
             }
           >
             <Stack bg="white" shadow={2} p={4}>
-              <Text bold>{item.title || ''}</Text>
-              <Text>{item.desc || ''}</Text>
+              <Text bold>{item.name || ''}</Text>
+              <Text>{item.rank || ''}</Text>
             </Stack>
           </TouchableOpacity>
         )}
