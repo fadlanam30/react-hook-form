@@ -7,7 +7,7 @@ import {
   TextInput as TextInputRNPaper
 } from 'react-native-paper'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { TouchableOpacity } from 'react-native'
+import { Image, View, TouchableOpacity } from 'react-native'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm, useWatch } from 'react-hook-form'
 
@@ -16,13 +16,16 @@ import validationSchema from './validationSchema'
 import TextInput from '../../components/text-input/TextInput'
 import dayjs from 'dayjs'
 import { ErrorMessage } from '@hookform/error-message'
-import { useNavigation } from '@react-navigation/native'
-import { useGetRanksQuery } from '../../services/rankAPI'
-import { useGetStatusQuery } from '../../services/statusAPI'
-import { usePostPersMutation } from '../../services/persAPI'
+import * as ImagePicker from "expo-image-picker"
 
-const Detail = ({ initialValues = {} }) => {
-  const navigation = useNavigation()
+const Detail = ({
+  initialValues = {},
+  ranks = [],
+  statuses = [],
+  onSubmit,
+  onBackPress,
+}) => {
+  // const navigation = useNavigation()
   const methods = useForm({
     mode: 'all',
     defaultValues: initialValues,
@@ -36,56 +39,37 @@ const Detail = ({ initialValues = {} }) => {
     name: 'born_date'
   })
 
+  const imageHook = useWatch({
+    control,
+    name: "image",
+  })
+
   const [date, setDate] = useState(new Date())
   const [showDate, setShowDate] = useState(false)
-  const [rank, setRank] = useState('')
-  const [status, setStatus] = useState('')
-
-  const [postPers] = usePostPersMutation()
-
-  const ranks = useGetRanksQuery().data?.data || []
-
-  const listRank = ranks.map((item) => {
-    return {
-      label: item.name,
-      value: item.id
-    }
-  })
-
-  const statuses = useGetStatusQuery().data?.data || []
-
-  const listStatus = statuses.map((item) => {
-    return {
-      label: item.name,
-      value: item.id
-    }
-  })
-
-  // const onChange = (event, selectedDate) => {
-  //   const currentDate = selectedDate
-  //   setShowDate(false)
-  //   setDate(handleBornDateSave(currentDate))
-  //   console.log('currentDate', currentDate)
-  // }
+  const [image, setImage] = useState(null);
 
   const handleBornDateSave = () => {
     setValue('born_date', date, { shouldValidate: true })
     setShowDate(false)
   }
 
-  const onSubmit = (values) => {
-    const payload = {
-      ...values,
-      born_date: dayjs(values.born_date).format('DD MMMM YYYY')
+  const pickImage = async () => {
+    try {
+      // No permissions request is necessary for launching the image library
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        aspect: [4, 3],
+        quality: 1,
+        allowsEditing: true,
+      });
+      console.log("result", result);
+      if (!result.cancelled) {
+        // setValue("image", result.assets[0], { shouldValidate: true });
+        setImage(result.uri);
+      }
+    } catch (e) {
+      console.log("err", e);
     }
-    console.log('payload', payload)
-    postPers(payload)
-    .unwrap()
-    .then((_) => navigation.goBack())
-    .catch((err) => {
-      console.log('error', err)
-      Alert.alert('Error', err.data.error)
-    })
   }
 
   useEffect(() => {
@@ -95,7 +79,7 @@ const Detail = ({ initialValues = {} }) => {
   return (
     <Stack flex={1}>
       <Appbar.Header>
-        <Appbar.BackAction onPress={navigation.goBack} />
+        <Appbar.BackAction onPress={onBackPress} />
         <Appbar.Content title="Add User" />
       </Appbar.Header>
       <ScrollView _contentContainerStyle={{ p: 4 }}>
@@ -172,7 +156,7 @@ const Detail = ({ initialValues = {} }) => {
             label="Rank"
             name="rank_id"
             control={control}
-            list={listRank}
+            list={ranks}
             // value={rank}
             // setValue={setRank}
             mode="outlined"
@@ -181,11 +165,47 @@ const Detail = ({ initialValues = {} }) => {
             label="Status"
             name="status_id"
             control={control}
-            list={listStatus}
+            list={statuses}
             // value={status}
             // setValue={setStatus}
             mode="outlined"
           />
+          <View
+            style={{
+              flex: 1,
+              flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {image && (
+              <Image
+                style={{
+                  width: 200,
+                  height: 200,
+                }}
+                alt="img-content"
+                borderRadius={8}
+                source={{ uri: image }}
+                resizeMode="cover"
+              />
+            )}
+            <ErrorMessage
+              errors={formState.errors}
+              name="image"
+              render={({ message }) => (
+                <HelperText
+                  type="error"
+                  visible={!!message}
+                  style={{ fontSize: 12 }}
+                >
+                  {message}
+                </HelperText>
+              )}
+            />
+            <Button onPress={pickImage}>
+              Pick Image
+            </Button>
+          </View>
           <Button
             onPress={handleSubmit(onSubmit)}
             colorScheme="indigo"

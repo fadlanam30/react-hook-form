@@ -1,12 +1,11 @@
-import { useNavigation } from '@react-navigation/native'
 import { FlatList, Stack, Text } from 'native-base'
 import React from 'react'
 import { TouchableOpacity } from 'react-native'
 import { Appbar } from 'react-native-paper'
+import PersCard from '../../components/PersCard'
 import { useGetPersQuery } from '../../services/persAPI'
 
-const HomeScreen = () => {
-  const navigation = useNavigation()
+const HomeScreen = ({ navigation }) => {
 
   const listPers = useGetPersQuery().data?.data || []
 
@@ -33,17 +32,13 @@ const HomeScreen = () => {
         ItemSeparatorComponent={() => <Stack h={4} />}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() =>
-              navigation.navigate('UserFormScreen', {
-                id: item.id,
-                type: 'edit'
-              })
-            }
+          onPress={() => navigation.navigate('DetailScreen', { id: item.id})}
           >
-            <Stack bg="white" shadow={2} p={4}>
-              <Text bold>{item.name || ''}</Text>
-              <Text>{item.rank || ''}</Text>
-            </Stack>
+            <PersCard
+              pers={item}
+            >
+
+            </PersCard>
           </TouchableOpacity>
         )}
       />

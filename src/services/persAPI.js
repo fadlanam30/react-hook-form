@@ -8,6 +8,12 @@ export const persAPI = baseAPI.injectEndpoints({
                 method: 'GET',
             })
         }),
+        getPersById: builder.query({
+            query: (id) => ({
+                url: `api/pers/${id}`,
+                method: "GET",
+            }),
+        }),
         postPers: builder.mutation({
             query: (payload) => ({
                 url: '/pers',
@@ -18,4 +24,4 @@ export const persAPI = baseAPI.injectEndpoints({
     })
 })
 
-export const { useGetPersQuery, usePostPersMutation } = persAPI
+export const { useGetPersQuery, useGetPersByIdQuery, usePostPersMutation } = persAPI
